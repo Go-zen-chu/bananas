@@ -5,7 +5,6 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var app = express();
-
 var port_num = 13337;
 
 // view engine setup
@@ -21,13 +20,53 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-var routes = require('./routes');
-app.use('/', routes.index);
+// defining session for logging in  
+var session = require('express-session');
+// setting of mongo db for saving login info
+//var MongoStore = require('connect-mongo')(session);
+//var mongoose = require('mongoose');
+
+app.use(session({
+    secret: 'secret',
+    //store: new MongoStore({
+    //    mongooseConnection: mongoose.connection,
+	//	db: 'session',
+    //    host: 'localhost',
+    //    clear_interval: 60 * 60,
+    //}),
+    cookie: {
+        httpOnly: false,
+        maxAge: new Date(Date.now() + 30 * 60 * 1000) // 30min
+    },
+	resave: false,
+	saveUninitialized: false 
+}));
+
+var util = require('util'); // for debuggin purpose
+
+var sessionCheck = function(req, res, next) {
+    console.log('session check');
+    if(req.session.user){
+		console.log(util.inspect(req.session,false,null));
+    	res.redirect('/main'); // login successful
+    }else{
+	  next();
+    }   
+};
+
+// a middleware function with no mount path. This code is executed for every request to the router 
+//app.use(function (req, res, next) {
+//	console.log('Time:', Date.now());
+//  	next();
+//});
+
+var routes_main = require('./routes/main.js');
+app.use('/main', routes_main);
+var routes_index = require('./routes/index.js');
+app.use('/', sessionCheck, routes_index); // '/' has to be defined at last otherwise it handles all kind of url 
 //app.use('/users', users);
 
-
-// error handlers======================
-
+// error handlers (have to be defined after routes otherwise they show err anytime)
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   var err = new Error('Not Found');
@@ -53,45 +92,7 @@ app.use(function(err, req, res, next) {
   });
 });
 
-//=====================================
 
-var session = require('express-session');
-// setting of mongo db
-var MongoStore = require('connect-mongo')(session);
-var mongoose = require('mongoose');
-
-app.use(session({
-    secret: 'secret',
-    store: new MongoStore({
-        mongooseConnection: mongoose.connection,
-		db: 'session',
-        host: 'localhost',
-        clear_interval: 60 * 60,
-    }),
-    cookie: {
-        httpOnly: false,
-        maxAge: new Date(Date.now() + 60 * 60 * 1000)
-    },
-	resave: true,
-	saveUninitialized: true 
-})); //追加
-
-var loginCheck = function(req, res, next) {
-    if(req.session.user){
-      next();
-    }else{
-      res.redirect('/login');
-    }
-};
-
-//app.get('/', loginCheck, routes.index);
-//app.get('/login', routes.login);
-//app.post('/add', routes.add);
-//app.get('/logout', function(req, res){
-//  req.session.destroy();
-//  console.log('deleted sesstion');
-//  res.redirect('/');
-//});
 
 module.exports = app;
 app.listen(port_num);

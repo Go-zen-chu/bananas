@@ -1,4 +1,3 @@
-
 var mongoose = require('mongoose');
 var url = 'mongodb://localhost/user';
 var db  = mongoose.createConnection(url, function(err, res){
@@ -9,7 +8,7 @@ var db  = mongoose.createConnection(url, function(err, res){
     }
 });
 
-// Modelの定義
+// definition of User
 var UserSchema = new mongoose.Schema({
     email    : String,
     password  : String

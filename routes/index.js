@@ -1,31 +1,35 @@
 var express = require('express');
 var router = express.Router();
 
-// a middleware function with no mount path. This code is executed for every request to the router
-//router.use(function (req, res, next) {
-//  console.log('Time:', Date.now());
-//    next();
-//	});
-//}
-
 router.get('/', function(req, res, next) {
-  res.render('index.ejs', { title: 'BANANAS' }); // pass dictionary obj to 'index.ejs'
+  res.render('index.ejs', { title: 'BANANAS', err_message:'' }); // pass dictionary obj to 'index.ejs'
 });
+
+router.get('/main',  function(req, res, next) {
+  res.render('main.ejs', { title: 'BANANAS' }); // pass dictionary obj to 'index.ejs'
+});
+
+//app.get('/', loginCheck, routes);
+//app.get('/login', routes.login);
+//app.post('/add', routes.add);
+//app.get('/logout', function(req, res){
+//  req.session.destroy();
+//  console.log('deleted sesstion');
+//  res.redirect('/');
 
 module.exports = router;
 
-/*モデル読み込み*/
-var model = require('../model.js'),
-    User  = model.User;
+// load model
+var model = require('../model.js'), User  = model.User;
 
-/*ログイン後ページ*/
-exports.index = function(req, res){
+// after successing logging in
+module.exports.index = function(req, res){
     res.render('index', { user: req.session.user});
     console.log(req.session.user);
 };
 
-/*ユーザー登録機能*/
-exports.add = function(req, res){
+// register user
+module.exports.add = function(req, res){
     var newUser = new User(req.body);
     newUser.save(function(err){
         if(err){
@@ -37,20 +41,24 @@ exports.add = function(req, res){
     });
 };
 
-/*ログイン機能*/
-exports.login = function(req, res){
-    var email    = req.query.email;
+// login function
+module.exports.login = function(req, res){
+    console.log('login');
+	var email    = req.query.email;
     var password = req.query.password;
     var query = { "email": email, "password": password };
     User.find(query, function(err, data){
         if(err){
             console.log(err);
         }
+		console.log(data);
         if(data == ""){
-            res.render('login');
+  			res.render('index.ejs', { title: 'BANANAS', err_message: 'User or Password not match!' });
+            //res.render('/'); // login failed
         }else{
             req.session.user = email;
-            res.redirect('/');
+            res.redirect('/main');
         }
     });
 };
+
