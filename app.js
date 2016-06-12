@@ -16,24 +16,24 @@ app.set('view engine', 'ejs');
 // use is for using middlware
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // defining session for logging in  
 var session = require('express-session');
 // setting of mongo db for saving login info
-//var MongoStore = require('connect-mongo')(session);
-//var mongoose = require('mongoose');
+var MongoStore = require('connect-mongo')(session);
+var mongoose = require('mongoose');
 
 app.use(session({
     secret: 'secret',
-    //store: new MongoStore({
-    //    mongooseConnection: mongoose.connection,
-	//	db: 'session',
-    //    host: 'localhost',
-    //    clear_interval: 60 * 60,
-    //}),
+    store: new MongoStore({
+        mongooseConnection: mongoose.connection,
+		db: 'session',
+        host: 'localhost',
+        clear_interval: 60 * 60,
+    }),
     cookie: {
         httpOnly: false,
         maxAge: new Date(Date.now() + 30 * 60 * 1000) // 30min
@@ -43,16 +43,16 @@ app.use(session({
 }));
 
 var util = require('util'); // for debuggin purpose
-
 var sessionCheck = function(req, res, next) {
     console.log('session check');
     if(req.session.user){
 		console.log(util.inspect(req.session,false,null));
-    	res.redirect('/main'); // login successful
+    	next(); // session is valid 
     }else{
-	  next();
-    }   
-};
+		// show login page
+		res.redirect('/login');
+	}
+};   
 
 // a middleware function with no mount path. This code is executed for every request to the router 
 //app.use(function (req, res, next) {
@@ -60,10 +60,10 @@ var sessionCheck = function(req, res, next) {
 //  	next();
 //});
 
+var routes_login = require('./routes/login.js');
+app.use('/login', routes_login);
 var routes_main = require('./routes/main.js');
-app.use('/main', routes_main);
-var routes_index = require('./routes/index.js');
-app.use('/', sessionCheck, routes_index); // '/' has to be defined at last otherwise it handles all kind of url 
+app.use('/', sessionCheck, routes_main); // '/' has to be defined at last otherwise it handles all kind of url 
 //app.use('/users', users);
 
 // error handlers (have to be defined after routes otherwise they show err anytime)
@@ -91,8 +91,5 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
-
-
-
-module.exports = app;
 app.listen(port_num);
+module.exports = app;

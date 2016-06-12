@@ -12,6 +12,8 @@ var db  = mongoose.createConnection(url, function(err, res){
 var UserSchema = new mongoose.Schema({
     email    : String,
     password  : String
-},{collection: 'info'});
+},{
+	collection: 'info'
+});
 
 exports.User = db.model('User', UserSchema);
